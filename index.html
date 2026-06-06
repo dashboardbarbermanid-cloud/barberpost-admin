@@ -74,7 +74,7 @@
         <aside class="hidden md:flex fixed top-4 bottom-4 left-4 w-72 bg-black text-white rounded-3xl p-6 flex-col shadow-2xl z-40">
             <div class="flex items-center gap-3 mb-10 px-2">
                 <div class="bg-white p-2.5 rounded-xl shadow-inner w-12 h-12 flex items-center justify-center overflow-hidden">
-                    <img src="https://barberpost-admin.vercel.app/img/barberman.png" alt="Logo" class="w-full h-full object-contain">
+                    <img src="https://i.ibb.co.com/001yB4w/BARBER-20260604-120614-0000.png" alt="Logo" class="w-full h-full object-contain">
                 </div>
                 <div>
                     <h1 class="font-bold text-lg tracking-wide">Barberman.Id</h1>
@@ -534,6 +534,33 @@
                 btnMob.onclick = () => switchTab(tab.id); 
                 mobileNav.appendChild(btnMob);
             });
+
+            // --- NEW: Promo Banner GIF (Desktop Sidebar) ---
+            // Ditempatkan di bawah menu pengeluaran (terakhir di array tabs)
+            const bannerDiv = document.createElement('div');
+            bannerDiv.className = "mt-4 rounded-2xl overflow-hidden border border-gray-800 relative group cursor-pointer shadow-lg";
+            // Ganti URL dibawah ini dengan URL GIF Anda
+            bannerDiv.innerHTML = `
+                <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcjJzNWg3cHY1c2dpY29oYzdiN2lwcGFpaWJsNDhpZmxidHU5a3p4cSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/J1eCs69quiS3IKY8zS/giphy.gif" 
+                     alt="Promo Banner" 
+                     class="w-full h-32 object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300">
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                </div>
+            `;
+            // Contoh jika ingin di klik pergi ke link tertentu:
+            bannerDiv.onclick = () => { window.open('https://example.com', '_blank'); };
+            desktopNav.appendChild(bannerDiv);
+            // --- END Promo Banner ---
+
+            // --- NEW: Mobile Logout Button ---
+            const btnLogoutMob = document.createElement('button');
+            // Merah agar terlihat sebagai aksi keluar
+            btnLogoutMob.className = "nav-btn-mobile flex flex-col items-center gap-1 text-red-500 opacity-70 hover:opacity-100 transition-all duration-200 px-1";
+            btnLogoutMob.innerHTML = `<i class="fa-solid fa-power-off text-base mb-0.5"></i><span class="text-[8px] font-medium">Keluar</span>`;
+            // Menggunakan fungsi logout yang sudah ada di window
+            btnLogoutMob.onclick = window.logout;
+            mobileNav.appendChild(btnLogoutMob);
+            // --- END Mobile Logout Button ---
         };
 
         const switchTab = (tabId) => {
@@ -547,6 +574,7 @@
                     btn.className = "nav-btn w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 text-gray-400 hover:text-white hover:bg-gray-900 font-semibold"; 
             });
             document.querySelectorAll('.nav-btn-mobile').forEach(btn => { 
+                if(btn.classList.contains('text-red-500')) return; // Skip logout button styling logic
                 btn.dataset.tab === tabId ? 
                     (btn.classList.remove('opacity-50'), btn.classList.add('opacity-100', 'scale-110')) : 
                     (btn.classList.add('opacity-50'), btn.classList.remove('opacity-100', 'scale-110')); 
