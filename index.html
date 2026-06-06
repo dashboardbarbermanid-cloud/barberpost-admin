@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Barberman.Id - Admin Panel</title>
+    
+    <link rel="icon" type="image/png" href="https://i.ibb.co.com/001yB4w/BARBER-20260604-120614-0000.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F2F2F7;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+            height: 100vh;
+            height: -webkit-fill-available;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .mobile-nav-safe { padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)); }
+        
+        #toast {
+            visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center;
+            border-radius: 50px; padding: 16px; position: fixed; z-index: 9999; left: 50%; bottom: 30px;
+            transform: translateX(-50%); font-size: 14px; opacity: 0; transition: opacity 0.3s, bottom 0.3s;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+    </style>
+</head>
+<body class="text-black antialiased selection:bg-red-200">
+
+    <div id="toast">Notifikasi</div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center px-6 hidden fade-in">
+        <div class="w-full max-w-sm space-y-8">
+            <div class="text-center">
+                <div class="mx-auto bg-black text-white w-24 h-24 flex items-center justify-center rounded-3xl mb-6 shadow-xl overflow-hidden p-2">
+                    <img src="https://i.ibb.co.com/001yB4w/BARBER-20260604-120614-0000.png" alt="Logo" class="w-full h-full object-contain">
+                </div>
+                <h2 class="text-3xl font-extrabold tracking-tight">Admin Panel</h2>
+                <p class="text-gray-500 mt-2">Masuk untuk memonitoring cabang</p>
+            </div>
+            <div class="space-y-4">
+                <input type="email" id="login-email" class="w-full bg-gray-50 border-2 border-gray-200 text-black rounded-2xl px-5 py-4 font-bold text-lg focus:bg-white focus:ring-2 focus:ring-black focus:border-black transition-colors" placeholder="Email Admin" required>
+                <input type="password" id="login-password" class="w-full bg-gray-50 border-2 border-gray-200 text-black rounded-2xl px-5 py-4 font-bold text-lg focus:bg-white focus:ring-2 focus:ring-black focus:border-black transition-colors" placeholder="Password" required>
+                <button id="btn-email-login" class="w-full bg-black text-white border-2 border-black rounded-2xl px-5 py-4 font-extrabold text-lg hover:bg-gray-800 transition-colors shadow-lg flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-shield-halved"></i> Masuk Admin
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="app-wrapper" class="flex min-h-screen hidden">
+        
+        <!-- DESKTOP SIDEBAR -->
+        <aside class="hidden md:flex fixed top-4 bottom-4 left-4 w-72 bg-black text-white rounded-3xl p-6 flex-col shadow-2xl z-40">
+            <div class="flex items-center gap-3 mb-10 px-2">
+                <div class="bg-white p-2.5 rounded-xl shadow-inner w-12 h-12 flex items-center justify-center overflow-hidden">
+                    <img src="https://i.ibb.co/rRPgHFzP/images-Nero-AI-Image-Upscaler-Photo-Face-removebg-preview.png" alt="Logo" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-wide">Barberman.Id</h1>
+                    <p class="text-xs text-gray-500">Admin Dashboard</p>
+                </div>
+            </div>
+            <nav class="flex-1 space-y-1 overflow-y-auto" id="desktop-nav"></nav>
+            <div class="mt-auto pt-6 border-t border-gray-800">
+                <button onclick="logout()" class="w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-red-500 hover:bg-red-500/10 transition-colors text-sm font-semibold">
+                    <i class="fa-solid fa-power-off w-5"></i> Keluar
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 md:ml-[304px] p-4 md:p-6 pb-28 md:pb-6 relative w-full overflow-x-hidden">
+            
+            <!-- VIEW: DASHBOARD -->
+            <section id="view-dashboard" class="view-section hidden fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-3xl font-extrabold tracking-tight">Dashboard Global</h2>
+                        <p class="text-gray-500 text-sm">Monitoring semua cabang aktif</p>
+                    </div>
+                    <div class="bg-black text-white px-4 py-2 rounded-xl font-bold text-sm shadow-sm">
+                        <span id="active-mitra-count">0</span> Mitra Aktif
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-black text-white p-5 rounded-3xl shadow-sm border border-gray-900">
+                        <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 rounded-full bg-green-500"></div><p class="text-gray-400 text-xs font-bold uppercase">Total Pendapatan</p></div>
+                        <h4 class="text-lg md:text-xl font-extrabold truncate" id="dash-total-revenue">Rp 0</h4>
+                    </div>
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+                        <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 rounded-full bg-blue-500"></div><p class="text-gray-400 text-xs font-bold uppercase">Transaksi</p></div>
+                        <h4 class="text-lg md:text-xl font-extrabold truncate" id="dash-total-tx">0</h4>
+                    </div>
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+                        <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 rounded-full bg-purple-500"></div><p class="text-gray-400 text-xs font-bold uppercase">Total Pengeluaran</p></div>
+                        <h4 class="text-lg md:text-xl font-extrabold truncate text-red-500" id="dash-total-exp">Rp 0</h4>
+                    </div>
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+                        <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 rounded-full bg-orange-500"></div><p class="text-gray-400 text-xs font-bold uppercase">Laba Bersih</p></div>
+                        <h4 class="text-lg md:text-xl font-extrabold truncate text-green-600" id="dash-net-profit">Rp 0</h4>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-8">
+                    <!-- Header with Filter -->
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
+                        <h3 class="font-bold text-lg">Grafik Pendapatan</h3>
+                        <div class="relative">
+                            <i class="fa-regular fa-calendar absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                            <input type="date" id="dash-chart-filter" class="bg-gray-50 border border-gray-200 text-black rounded-xl pl-9 pr-4 py-2 text-xs font-bold focus:ring-2 focus:ring-black w-40" placeholder="Pilih Tanggal">
+                        </div>
+                    </div>
+                    <div class="relative w-full" style="height: 300px;"><canvas id="globalRevenueChart"></canvas></div>
+                </div>
+
+                <h3 class="font-bold text-lg mb-4">Performa Mitra Terbaik</h3>
+                <div id="top-mitra-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </section>
+
+            <!-- VIEW: MITRA (MANAGEMENT) -->
+            <section id="view-mitra" class="view-section hidden fade-in">
+                <h2 class="text-3xl font-extrabold mb-6 tracking-tight">Manajemen Mitra</h2>
+                
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-8 fade-in">
+                    <h3 class="font-bold text-lg mb-4 border-b border-gray-100 pb-2">Tambah Mitra Baru</h3>
+                    <p class="text-xs text-red-500 mb-4 bg-red-50 p-2 rounded-lg">
+                        <i class="fa-solid fa-circle-info mr-1"></i> 
+                        Masukkan <strong>UID</strong> akun mitra. UID bisa dilihat di menu "Profil" pada aplikasi Kasir Mitra.
+                    </p>
+                    <form id="form-add-mitra" class="flex flex-col gap-3">
+                        <input type="text" id="input-mitra-name" placeholder="Nama Cabang (Contoh: Barber Jaksel)" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-bold focus:ring-2 focus:ring-black focus:bg-white" required>
+                        <input type="email" id="input-mitra-email" placeholder="Email Login Mitra" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-bold focus:ring-2 focus:ring-black focus:bg-white" required>
+                        <input type="text" id="input-mitra-uid" placeholder="UID Akun (PENTING)" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-bold focus:ring-2 focus:ring-black focus:bg-white" required>
+                        <button type="submit" class="w-full md:w-auto bg-black text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800 transition shadow-sm active:scale-95 whitespace-nowrap">
+                            <i class="fa-solid fa-plus"></i> Tambah
+                        </button>
+                    </form>
+                </div>
+
+                <h3 class="font-bold text-lg mb-4">Daftar Mitra Terhubung</h3>
+                <div id="mitra-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </section>
+
+            <!-- VIEW: MITRA PROFILE -->
+            <section id="view-mitra-profile" class="view-section hidden fade-in">
+                <div class="flex items-center gap-4 mb-6">
+                    <button onclick="switchTab('mitra')" class="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 shadow-sm"><i class="fa-solid fa-arrow-left"></i></button>
+                    <h2 class="text-3xl font-extrabold tracking-tight">Profil Mitra</h2>
+                </div>
+
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-16 h-16 bg-black text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg" id="prof-avatar">B</div>
+                        <div>
+                            <h3 class="text-2xl font-bold mb-1" id="prof-name">Nama Cabang</h3>
+                            <p class="text-sm text-gray-500" id="prof-email">email@mitra.com</p>
+                            <p class="text-xs text-gray-400 mt-1">UID: <span id="prof-uid">...</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QRIS Preview -->
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
+                    <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i class="fa-solid fa-qrcode text-blue-500"></i> QRIS Payment</h3>
+                    <div id="prof-qris-container" class="flex flex-col md:flex-row items-center gap-6">
+                        <img id="prof-qris-img" src="" class="w-48 h-48 object-contain rounded-xl border border-gray-200 bg-gray-50 p-2 hidden">
+                        <p class="text-sm text-gray-500 text-center md:text-left" id="prof-no-qris">Tidak ada QRIS yang diatur oleh mitra ini.</p>
+                    </div>
+                </div>
+
+                <!-- Top Capster -->
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
+                    <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i class="fa-solid fa-trophy text-yellow-500"></i> Top Capster</h3>
+                    <div id="prof-top-capster-list" class="space-y-2"></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                        <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i class="fa-solid fa-users text-black"></i> Daftar Capster</h3>
+                        <div id="prof-capsters-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                    </div>
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                        <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i class="fa-solid fa-list text-black"></i> Layanan & Harga</h3>
+                        <div id="prof-services-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: TRANSAKSI GLOBAL -->
+            <section id="view-transactions" class="view-section hidden fade-in">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <div>
+                        <h2 class="text-3xl font-extrabold tracking-tight">Semua Transaksi</h2>
+                        <p class="text-gray-500 text-sm mt-1">Data real-time dari seluruh mitra</p>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                        <div class="relative">
+                            <i class="fa-solid fa-calendar-days absolute left-3 top-3.5 text-gray-400 text-xs"></i>
+                            <input type="date" id="tx-date-filter" class="bg-white border border-gray-200 text-black rounded-xl pl-9 pr-4 py-2.5 font-bold shadow-sm focus:ring-2 focus:ring-black text-sm w-full md:w-40">
+                        </div>
+                        <select id="filter-mitra-tx" class="bg-white border border-gray-200 text-black rounded-xl px-4 py-2.5 font-bold shadow-sm focus:ring-2 focus:ring-black text-sm w-full md:w-48">
+                            <option value="all">Semua Mitra</option>
+                        </select>
+                        <input type="text" id="search-tx" placeholder="Cari Nama/Antrian..." class="bg-white border border-gray-200 text-black rounded-xl px-4 py-2.5 font-bold shadow-sm focus:ring-2 focus:ring-black text-sm w-full md:w-40">
+                    </div>
+                </div>
+
+                <!-- Total Summary Card -->
+                <div class="bg-green-50 border border-green-200 p-4 rounded-xl mb-6 flex flex-col md:flex-row justify-between items-center gap-2">
+                    <div>
+                        <p class="text-xs font-bold text-green-600 uppercase tracking-wide">Total Pendapatan (Filter Aktif)</p>
+                        <p class="text-[10px] text-gray-500">Berdasarkan filter tanggal & mitra</p>
+                    </div>
+                    <h3 class="text-2xl md:text-3xl font-extrabold text-green-900 w-auto" id="tx-summary-total">Rp 0</h3>
+                </div>
+
+                <div id="global-tx-list" class="space-y-3"></div>
+            </section>
+
+            <!-- VIEW: ABSENSI -->
+            <section id="view-absensi" class="view-section hidden fade-in">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <div>
+                        <h2 class="text-3xl font-extrabold tracking-tight">Log Absensi</h2>
+                        <p class="text-gray-500 text-sm mt-1">Monitoring kehadiran crew</p>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                        <div class="relative">
+                            <i class="fa-solid fa-calendar-days absolute left-3 top-3.5 text-gray-400 text-xs"></i>
+                            <input type="date" id="absensi-date-filter" class="bg-white border border-gray-200 text-black rounded-xl pl-9 pr-4 py-2.5 font-bold shadow-sm focus:ring-2 focus:ring-black text-sm w-full md:w-40">
+                        </div>
+                        <select id="filter-mitra-absensi" class="bg-white border border-gray-200 text-black rounded-xl px-4 py-2.5 font-bold shadow-sm focus:ring-2 focus:ring-black text-sm w-full md:w-48">
+                            <option value="all">Semua Mitra</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="absensi-list" class="space-y-3"></div>
+            </section>
+
+            <!-- VIEW: PENGELUARAN GLOBAL -->
+            <section id="view-expenses" class="view-section hidden fade-in">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <div>
+                        <h2 class="text-3xl font-extrabold tracking-tight">Pengeluaran Mitra</h2>
+                        <p class="text-gray-500 text-sm mt-1">Monitor cashflow operasional</p>
+                    </div>
+                    <!-- FILTER TANGGAL BARU -->
+                    <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                        <div class="relative">
+                            <i class="fa-solid fa-calendar-days absolute left-3 top-3.5 text-gray-400 text-xs"></i>
+                            <input type="date" id="exp-date-filter" class="bg-white border border-gray-200 text-black rounded-xl pl-9 pr-4 py-2.5 font-bold shadow-sm focus:ring-2 focus:ring-black text-sm w-full md:w-40">
+                        </div>
+                        <select id="filter-mitra-exp" class="bg-white border border-gray-200 text-black rounded-xl px-4 py-2.5 font-bold shadow-sm focus:ring-2 focus:ring-black text-sm w-full md:w-48">
+                            <option value="all">Semua Mitra</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Total Summary Card -->
+                <div class="bg-red-50 border border-red-200 p-4 rounded-xl mb-6 flex flex-col md:flex-row justify-between items-center gap-2">
+                    <div>
+                        <p class="text-xs font-bold text-red-600 uppercase tracking-wide">Total Pengeluaran (Filter Aktif)</p>
+                        <p class="text-[10px] text-gray-500">Berdasarkan filter tanggal & mitra</p>
+                    </div>
+                    <h3 class="text-2xl md:text-3xl font-extrabold text-red-900 w-auto" id="exp-summary-total">Rp 0</h3>
+                </div>
+
+                <div id="global-exp-list" class="space-y-3"></div>
+            </section>
+
+        </main>
+
+        <!-- MOBILE FLOATING NAV -->
+        <nav class="md:hidden fixed bottom-4 left-4 right-4 bg-black/90 backdrop-blur-lg rounded-3xl flex justify-between px-2 py-2 z-40 shadow-2xl border border-white/10 mobile-nav-safe">
+            <div id="mobile-nav-container" class="flex justify-between w-full gap-1"></div>
+        </nav>
+    </div>
+
+    <!-- LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const Chart = window.Chart;
+
+        let firebaseConfig = {
+            apiKey: "AIzaSyCtVLpWt9_Bi4mhaqDzukahnZu9vOTMj9I",
+            authDomain: "barbermanid-e3082.firebaseapp.com",
+            projectId: "barbermanid-e3082",
+            storageBucket: "barbermanid-e3082.firebasestorage.app",
+            messagingSenderId: "516757337118",
+            appId: "1:516757337118:web:f11c24aeace9ffef216a0f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let mitraList = []; 
+        let globalTransactions = []; 
+        let globalExpenses = [];
+        let globalLogs = []; 
+        let listeners = []; 
+        let globalChartInstance = null;
+
+        const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+        const showToast = (msg) => { const t = document.getElementById("toast"); t.className = "show"; t.innerText = msg; setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000); };
+        
+        // --- RENDER FUNCTIONS ---
+
+        const renderTransactions = () => {
+            const filterMitra = document.getElementById('filter-mitra-tx').value;
+            const searchQ = document.getElementById('search-tx').value.toLowerCase();
+            const dateFilter = document.getElementById('tx-date-filter').value;
+
+            let filtered = globalTransactions.filter(t => t.status === 'Lunas' || t.status === 'Belum Lunas');
+            
+            if(filterMitra !== 'all') filtered = filtered.filter(t => t.mitraUid === filterMitra);
+            if(searchQ) filtered = filtered.filter(t => t.nama.toLowerCase().includes(searchQ) || t.antrian.toLowerCase().includes(searchQ));
+
+            if(dateFilter) {
+                const targetDate = new Date(dateFilter);
+                const startOfDay = new Date(targetDate.setHours(0,0,0,0)).getTime();
+                const endOfDay = new Date(targetDate.setHours(23,59,59,999)).getTime();
+                filtered = filtered.filter(t => t.timestamp >= startOfDay && t.timestamp <= endOfDay);
+            }
+
+            // Hitung Total Summary
+            const totalRev = filtered.filter(t => t.status === 'Lunas').reduce((sum, t) => sum + t.total, 0);
+            document.getElementById('tx-summary-total').innerText = formatRp(totalRev);
+
+            const container = document.getElementById('global-tx-list');
+            container.innerHTML = filtered.length === 0 ? '<p class="text-center py-6 text-gray-400">Tidak ada data.</p>' : '';
+
+            filtered.forEach(tx => {
+                const isLunas = tx.status === 'Lunas';
+                const badge = isLunas ? '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold">LUNAS</span>' : '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">BELUM</span>';
+                
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                        <div class="flex-1 w-full min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-bold text-sm bg-black text-white px-2 py-0.5 rounded whitespace-nowrap">${tx.antrian}</span>
+                                <span class="text-xs font-bold text-gray-500 truncate">${tx.mitraName}</span>
+                                <span class="text-xs text-gray-400 ml-auto md:hidden whitespace-nowrap">${new Date(tx.timestamp).toLocaleDateString()}</span>
+                            </div>
+                            <h4 class="font-bold text-black truncate">${tx.nama} <span class="text-sm font-normal text-gray-500">- ${tx.capsterName}</span></h4>
+                            <p class="text-xs text-gray-400 mt-1 truncate">${tx.serviceName} ${tx.productName ? ' + ' + tx.productName : ''}</p>
+                        </div>
+                        <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end mt-2 md:mt-0">
+                            <span class="font-extrabold text-lg w-auto truncate">${formatRp(tx.total)}</span>
+                            ${badge}
+                        </div>
+                    </div>
+                `;
+            });
+        };
+
+        const renderAbsensi = () => {
+            const filterMitra = document.getElementById('filter-mitra-absensi').value;
+            const dateFilter = document.getElementById('absensi-date-filter').value;
+
+            let filtered = globalLogs;
+
+            if(filterMitra !== 'all') filtered = filtered.filter(l => l.mitraUid === filterMitra);
+
+            if(dateFilter) {
+                const targetDate = new Date(dateFilter);
+                const startOfDay = new Date(targetDate.setHours(0,0,0,0)).getTime();
+                const endOfDay = new Date(targetDate.setHours(23,59,59,999)).getTime();
+                filtered = filtered.filter(l => l.timestamp >= startOfDay && l.timestamp <= endOfDay);
+            }
+
+            const container = document.getElementById('absensi-list');
+            container.innerHTML = filtered.length === 0 ? '<p class="text-center py-6 text-gray-400">Tidak ada log absensi.</p>' : '';
+
+            filtered.forEach(log => {
+                const isIn = log.type === 'IN' || log.type === 'OPEN';
+                const color = isIn ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200';
+                const icon = isIn ? 'fa-arrow-right-to-bracket' : 'fa-arrow-right-from-bracket';
+                const timeStr = new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                const dateStr = new Date(log.timestamp).toLocaleDateString('id-ID');
+
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full ${color} border flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid ${icon} text-xl"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-start">
+                                <h4 class="font-bold text-black truncate text-lg">${log.msg}</h4>
+                                <span class="text-xs font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded ml-2 whitespace-nowrap">${log.mitraName}</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-1"><i class="fa-regular fa-clock mr-1"></i> ${timeStr} • ${dateStr}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        };
+
+        const renderExpenses = () => {
+            const filterMitra = document.getElementById('filter-mitra-exp').value;
+            const dateFilter = document.getElementById('exp-date-filter').value; // BARU
+
+            let filtered = globalExpenses;
+
+            if(filterMitra !== 'all') filtered = filtered.filter(t => t.mitraUid === filterMitra);
+
+            // Filter Tanggal Pengeluaran
+            if(dateFilter) {
+                const targetDate = new Date(dateFilter);
+                const startOfDay = new Date(targetDate.setHours(0,0,0,0)).getTime();
+                const endOfDay = new Date(targetDate.setHours(23,59,59,999)).getTime();
+                filtered = filtered.filter(e => e.timestamp >= startOfDay && e.timestamp <= endOfDay);
+            }
+
+            // Hitung Total Pengeluaran
+            const totalExp = filtered.reduce((sum, e) => sum + e.amount, 0);
+            document.getElementById('exp-summary-total').innerText = formatRp(totalExp);
+
+            const container = document.getElementById('global-exp-list');
+            container.innerHTML = filtered.length === 0 ? '<p class="text-center py-6 text-gray-400">Tidak ada data.</p>' : '';
+            filtered.forEach(exp => {
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+                        <div class="min-w-0 mr-4">
+                            <div class="flex items-center gap-2 mb-1"><span class="text-xs font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded">${exp.mitraName}</span></div>
+                            <h4 class="font-bold text-black truncate">${exp.desc}</h4>
+                            <p class="text-xs text-gray-400">${new Date(exp.timestamp).toLocaleString('id-ID')}</p>
+                        </div>
+                        <span class="font-extrabold text-red-500 w-auto truncate">${formatRp(exp.amount)}</span>
+                    </div>
+                `;
+            });
+        };
+
+        const updateFilterDropdowns = () => {
+            const opts = `<option value="all">Semua Mitra</option>` + mitraList.map(m => `<option value="${m.uid}">${m.name}</option>`).join('');
+            document.getElementById('filter-mitra-tx').innerHTML = opts;
+            document.getElementById('filter-mitra-exp').innerHTML = opts;
+            document.getElementById('filter-mitra-absensi').innerHTML = opts;
+        };
+
+        // --- AUTH & INIT ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('login-screen').classList.add('hidden'); 
+                document.getElementById('app-wrapper').classList.remove('hidden');
+                initApp();
+                switchTab('dashboard');
+            } else {
+                currentUser = null;
+                document.getElementById('login-screen').classList.remove('hidden'); 
+                document.getElementById('app-wrapper').classList.add('hidden');
+            }
+        });
+
+        document.getElementById('btn-email-login').addEventListener('click', () => {
+            const email = document.getElementById('login-email').value, password = document.getElementById('login-password').value;
+            if(!email || !password) { showToast("Masukkan Email & Password"); return; }
+            const btn = document.getElementById('btn-email-login'); 
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...'; 
+            btn.disabled = true;
+            signInWithEmailAndPassword(auth, email, password)
+                .catch((error) => { showToast("Login Gagal: " + error.message); btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Masuk Admin'; btn.disabled = false; });
+        });
+
+        window.logout = () => { if(confirm("Keluar dari Admin Panel?")) signOut(auth); };
+
+        const tabs = [
+            { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard' }, 
+            { id: 'mitra', icon: 'fa-store', label: 'Mitra' },
+            { id: 'transactions', icon: 'fa-receipt', label: 'Transaksi' }, 
+            { id: 'absensi', icon: 'fa-user-clock', label: 'Absensi' },
+            { id: 'expenses', icon: 'fa-money-bill-transfer', label: 'Pengeluaran' }
+        ];
+
+        const initApp = () => {
+            renderNav();
+            listenToMitraList();
+        };
+
+        const renderNav = () => {
+            const desktopNav = document.getElementById('desktop-nav'), mobileNav = document.getElementById('mobile-nav-container');
+            desktopNav.innerHTML = ''; mobileNav.innerHTML = '';
+            tabs.forEach(tab => {
+                const btn = document.createElement('button'); 
+                btn.className = "nav-btn w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 text-gray-400 hover:text-white hover:bg-gray-900 font-semibold";
+                btn.dataset.tab = tab.id; 
+                btn.innerHTML = `<i class="fa-solid ${tab.icon} w-6 text-lg"></i> ${tab.label}`; 
+                btn.onclick = () => switchTab(tab.id); 
+                desktopNav.appendChild(btn);
+                const btnMob = document.createElement('button'); 
+                btnMob.className = "nav-btn-mobile flex flex-col items-center gap-1 text-white opacity-50 transition-all duration-200 px-1";
+                btnMob.dataset.tab = tab.id; 
+                btnMob.innerHTML = `<i class="fa-solid ${tab.icon} text-base mb-0.5"></i><span class="text-[8px] font-medium">${tab.label}</span>`; 
+                btnMob.onclick = () => switchTab(tab.id); 
+                mobileNav.appendChild(btnMob);
+            });
+        };
+
+        const switchTab = (tabId) => {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden')); 
+            const target = document.getElementById(`view-${tabId}`);
+            if(target) { target.classList.remove('hidden'); target.classList.add('fade-in'); }
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => { 
+                btn.dataset.tab === tabId ? 
+                    btn.className = "nav-btn w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 bg-white text-black font-bold shadow-md" : 
+                    btn.className = "nav-btn w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 text-gray-400 hover:text-white hover:bg-gray-900 font-semibold"; 
+            });
+            document.querySelectorAll('.nav-btn-mobile').forEach(btn => { 
+                btn.dataset.tab === tabId ? 
+                    (btn.classList.remove('opacity-50'), btn.classList.add('opacity-100', 'scale-110')) : 
+                    (btn.classList.add('opacity-50'), btn.classList.remove('opacity-100', 'scale-110')); 
+            });
+
+            if(tabId === 'dashboard') renderDashboard();
+            if(tabId === 'transactions') renderTransactions();
+            if(tabId === 'absensi') renderAbsensi();
+            if(tabId === 'expenses') renderExpenses();
+        };
+
+        // --- CORE LOGIC ---
+
+        const listenToMitraList = () => {
+            onSnapshot(collection(db, 'admin_mitra_list'), (snap) => {
+                const oldUids = mitraList.map(m => m.uid);
+                mitraList = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderMitraList();
+                updateFilterDropdowns();
+                
+                listeners = listeners.filter(unsub => {
+                    const isActive = mitraList.some(m => m.uid === unsub.uid);
+                    if(!isActive) unsub.fn(); 
+                    return isActive;
+                });
+
+                mitraList.forEach(mitra => {
+                    if(!oldUids.includes(mitra.uid)) {
+                        subscribeToMitraData(mitra);
+                    }
+                });
+                
+                document.getElementById('active-mitra-count').innerText = mitraList.length;
+            });
+        };
+
+        const subscribeToMitraData = (mitra) => {
+            const unsubTx = onSnapshot(collection(db, `users/${mitra.uid}/transactions`), (snap) => {
+                globalTransactions = globalTransactions.filter(t => t.mitraUid !== mitra.uid);
+                snap.forEach(d => {
+                    const data = d.data();
+                    globalTransactions.push({ ...data, id: d.id, mitraName: mitra.name, mitraEmail: mitra.email, mitraUid: mitra.uid });
+                });
+                globalTransactions.sort((a,b) => b.timestamp - a.timestamp);
+                if(!document.getElementById('view-dashboard').classList.contains('hidden')) renderDashboard();
+                if(!document.getElementById('view-transactions').classList.contains('hidden')) renderTransactions();
+            });
+
+            const unsubExp = onSnapshot(collection(db, `users/${mitra.uid}/expenses`), (snap) => {
+                globalExpenses = globalExpenses.filter(e => e.mitraUid !== mitra.uid);
+                snap.forEach(d => {
+                    const data = d.data();
+                    globalExpenses.push({ ...data, id: d.id, mitraName: mitra.name, mitraEmail: mitra.email, mitraUid: mitra.uid });
+                });
+                globalExpenses.sort((a,b) => b.timestamp - a.timestamp);
+                if(!document.getElementById('view-dashboard').classList.contains('hidden')) renderDashboard();
+                if(!document.getElementById('view-expenses').classList.contains('hidden')) renderExpenses();
+            });
+
+            const unsubLog = onSnapshot(collection(db, `users/${mitra.uid}/logs`), (snap) => {
+                globalLogs = globalLogs.filter(l => l.mitraUid !== mitra.uid);
+                snap.forEach(d => {
+                    const data = d.data();
+                    globalLogs.push({ ...data, id: d.id, mitraName: mitra.name, mitraEmail: mitra.email, mitraUid: mitra.uid });
+                });
+                globalLogs.sort((a,b) => b.timestamp - a.timestamp);
+                if(!document.getElementById('view-absensi').classList.contains('hidden')) renderAbsensi();
+            });
+
+            listeners.push({ uid: mitra.uid, fn: unsubTx });
+            listeners.push({ uid: mitra.uid, fn: unsubExp });
+            listeners.push({ uid: mitra.uid, fn: unsubLog });
+        };
+
+        document.getElementById('form-add-mitra').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('input-mitra-name').value;
+            const email = document.getElementById('input-mitra-email').value;
+            const uid = document.getElementById('input-mitra-uid').value;
+
+            if(mitraList.some(m => m.uid === uid || m.email === email)) {
+                showToast("Mitra ini sudah terdaftar!");
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, 'admin_mitra_list'), {
+                    name, email, uid, addedAt: Date.now(), addedBy: currentUser.email
+                });
+                document.getElementById('form-add-mitra').reset();
+                showToast("Mitra berhasil ditambahkan!");
+            } catch(err) {
+                showToast("Error: " + err.message);
+            }
+        });
+
+        const renderMitraList = () => {
+            const container = document.getElementById('mitra-list');
+            container.innerHTML = mitraList.length === 0 ? 
+                `<div class="col-span-full text-center py-10 opacity-50 bg-white rounded-2xl">Belum ada mitra terhubung.</div>` : '';
+            
+            mitraList.forEach(m => {
+                const txs = globalTransactions.filter(t => t.mitraUid === m.uid && t.status === 'Lunas');
+                const totalRev = txs.reduce((sum, t) => sum + t.total, 0);
+                const txCount = txs.length;
+
+                const div = document.createElement('div');
+                div.className = "bg-white p-5 rounded-3xl shadow-sm border border-gray-100 relative group cursor-pointer hover:shadow-md transition-shadow";
+                div.onclick = () => openMitraProfile(m.uid);
+                div.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center font-bold text-xl">${m.name.charAt(0)}</div>
+                            <div>
+                                <h4 class="font-bold text-lg">${m.name}</h4>
+                                <p class="text-xs text-gray-500">${m.email}</p>
+                            </div>
+                        </div>
+                        <button onclick="event.stopPropagation(); deleteMitra('${m.id}')" class="text-gray-300 hover:text-red-500 transition p-2"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-center bg-gray-50 p-3 rounded-xl">
+                        <div>
+                            <p class="text-xs text-gray-400 font-bold uppercase">Omset</p>
+                            <p class="font-extrabold text-sm truncate">${formatRp(totalRev)}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400 font-bold uppercase">Transaksi</p>
+                            <p class="font-extrabold text-sm">${txCount}</p>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-[10px] text-gray-400 text-right">UID: ...${m.uid.slice(-4)}</div>
+                `;
+                container.appendChild(div);
+            });
+        };
+
+        window.deleteMitra = async (docId) => {
+            if(confirm("Hapus mitra ini? Monitoring akan berhenti.")) {
+                await deleteDoc(doc(db, 'admin_mitra_list', docId));
+                showToast("Mitra dihapus.");
+            }
+        };
+
+        window.openMitraProfile = async (uid) => {
+            const mitra = mitraList.find(m => m.uid === uid);
+            if(!mitra) return;
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('view-mitra-profile').classList.remove('hidden');
+            document.getElementById('view-mitra-profile').classList.add('fade-in');
+            document.querySelectorAll('.nav-btn').forEach(btn => { btn.className = "nav-btn w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 text-gray-400 hover:text-white hover:bg-gray-900 font-semibold"; });
+
+            document.getElementById('prof-avatar').innerText = mitra.name.charAt(0);
+            document.getElementById('prof-name').innerText = mitra.name;
+            document.getElementById('prof-email').innerText = mitra.email;
+            document.getElementById('prof-uid').innerText = mitra.uid;
+
+            const mitraTx = globalTransactions.filter(t => t.mitraUid === uid && t.status === 'Lunas');
+            const capsterStats = {};
+            mitraTx.forEach(t => {
+                if(!capsterStats[t.capsterName]) capsterStats[t.capsterName] = { name: t.capsterName, revenue: 0, count: 0 };
+                capsterStats[t.capsterName].revenue += t.total;
+                capsterStats[t.capsterName].count++;
+            });
+
+            const sortedCapsters = Object.values(capsterStats).sort((a,b) => b.revenue - a.revenue).slice(0, 3);
+            const topCapsterContainer = document.getElementById('prof-top-capster-list');
+            topCapsterContainer.innerHTML = sortedCapsters.length === 0 ? '<p class="text-sm text-gray-400 text-center py-2">Belum ada data transaksi.</p>' : '';
+
+            sortedCapsters.forEach((c, idx) => {
+                topCapsterContainer.innerHTML += `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">${c.name.charAt(0)}</div>
+                            <div>
+                                <p class="font-bold text-sm text-black">${c.name}</p>
+                                <p class="text-[10px] text-gray-500">${c.count} Pelanggan</p>
+                            </div>
+                        </div>
+                        <span class="font-bold text-green-600 text-sm">${formatRp(c.revenue)}</span>
+                    </div>
+                `;
+            });
+
+            try {
+                const capSnap = await getDocs(collection(db, `users/${uid}/capsters`));
+                const capContainer = document.getElementById('prof-capsters-list');
+                capContainer.innerHTML = capSnap.empty ? '<p class="text-sm text-gray-400 text-center">Tidak ada capster.</p>' : '';
+                capSnap.forEach(doc => {
+                    const d = doc.data();
+                    capContainer.innerHTML += `
+                        <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-xs text-gray-600">${d.name.charAt(0)}</div>
+                            <span class="font-bold text-sm text-gray-800">${d.name}</span>
+                        </div>
+                    `;
+                });
+            } catch(e) { console.error(e); }
+
+            try {
+                const servSnap = await getDocs(collection(db, `users/${uid}/services`));
+                const servContainer = document.getElementById('prof-services-list');
+                servContainer.innerHTML = servSnap.empty ? '<p class="text-sm text-gray-400 text-center">Tidak ada layanan.</p>' : '';
+                servSnap.forEach(doc => {
+                    const d = doc.data();
+                    servContainer.innerHTML += `
+                        <div class="flex justify-between items-center p-2 bg-gray-50 rounded-lg border border-gray-100">
+                            <span class="font-bold text-sm text-gray-800 truncate">${d.name}</span>
+                            <span class="font-extrabold text-sm text-black">${formatRp(d.price)}</span>
+                        </div>
+                    `;
+                });
+            } catch(e) { console.error(e); }
+
+            try {
+                const paymentSnap = await getDocs(collection(db, `users/${uid}/store_settings`));
+                let qrisFound = false;
+                paymentSnap.forEach(d => {
+                    if(d.data().qrisImage) {
+                        document.getElementById('prof-qris-img').src = d.data().qrisImage;
+                        document.getElementById('prof-qris-img').classList.remove('hidden');
+                        document.getElementById('prof-no-qris').classList.add('hidden');
+                        qrisFound = true;
+                    }
+                });
+                if(!qrisFound) {
+                    document.getElementById('prof-qris-img').classList.add('hidden');
+                    document.getElementById('prof-no-qris').classList.remove('hidden');
+                }
+            } catch(e) { console.error(e); }
+        };
+
+        const renderDashboard = () => {
+            const totalRev = globalTransactions.filter(t => t.status === 'Lunas').reduce((s,t) => s + t.total, 0);
+            const totalTx = globalTransactions.filter(t => t.status === 'Lunas').length;
+            const totalExp = globalExpenses.reduce((s,e) => s + e.amount, 0);
+            
+            document.getElementById('dash-total-revenue').innerText = formatRp(totalRev);
+            document.getElementById('dash-total-tx').innerText = totalTx;
+            document.getElementById('dash-total-exp').innerText = formatRp(totalExp);
+            document.getElementById('dash-net-profit').innerText = formatRp(totalRev - totalExp);
+
+            renderTopMitra();
+            renderGlobalChart();
+        };
+
+        const renderTopMitra = () => {
+            const stats = {};
+            globalTransactions.filter(t => t.status === 'Lunas').forEach(t => {
+                if(!stats[t.mitraUid]) stats[t.mitraUid] = { name: t.mitraName, revenue: 0, count: 0 };
+                stats[t.mitraUid].revenue += t.total;
+                stats[t.mitraUid].count++;
+            });
+            
+            const sorted = Object.values(stats).sort((a,b) => b.revenue - a.revenue).slice(0, 3);
+            const container = document.getElementById('top-mitra-list');
+            container.innerHTML = sorted.length === 0 ? '<p class="col-span-full text-center text-sm text-gray-400">Belum ada data transaksi.</p>' : '';
+            
+            sorted.forEach((item, idx) => {
+                container.innerHTML += `
+                    <!-- Layout diubah ke flex-col (tumpuk) agar angka tidak keluar bar -->
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center gap-2">
+                        <div class="text-3xl font-black text-gray-200">#${idx+1}</div>
+                        <div class="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center text-xl font-bold shadow-inner">${item.name.charAt(0)}</div>
+                        <h4 class="font-bold text-lg truncate w-full">${item.name}</h4>
+                        <p class="text-xs text-gray-500">${item.count} Transaksi</p>
+                        <div class="w-full h-px bg-gray-100 my-1"></div>
+                        <p class="font-extrabold text-green-600 text-base w-full truncate">${formatRp(item.revenue)}</p>
+                    </div>
+                `;
+            });
+        };
+
+        const renderGlobalChart = () => {
+            const ctx = document.getElementById('globalRevenueChart').getContext('2d');
+            if(globalChartInstance) globalChartInstance.destroy();
+
+            const dailyData = {};
+            
+            // Filter Date Logic for Chart
+            const chartDateFilter = document.getElementById('dash-chart-filter').value;
+            const now = Date.now();
+            
+            let filterStart, filterEnd;
+
+            if(chartDateFilter) {
+                // Filter hari spesifik
+                const targetDate = new Date(chartDateFilter);
+                filterStart = new Date(targetDate.setHours(0,0,0,0)).getTime();
+                filterEnd = new Date(targetDate.setHours(23,59,59,999)).getTime();
+            } else {
+                // Default 30 hari terakhir
+                filterStart = now - (30 * 24 * 60 * 60 * 1000);
+                filterEnd = now;
+            }
+            
+            globalTransactions.filter(t => t.status === 'Lunas' && t.timestamp >= filterStart && t.timestamp <= filterEnd).forEach(t => {
+                const dateKey = new Date(t.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+                dailyData[dateKey] = (dailyData[dateKey] || 0) + t.total;
+            });
+
+            const labels = Object.keys(dailyData);
+            globalChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Total Revenue',
+                        data: labels.map(l => dailyData[l]),
+                        borderColor: '#000',
+                        backgroundColor: 'rgba(0,0,0,0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: (v) => 'Rp ' + (v/1000) + 'k' } }, x: { grid: { display: false } } }
+                }
+            });
+        };
+
+        // Event Listeners
+        document.getElementById('filter-mitra-tx').addEventListener('change', renderTransactions);
+        document.getElementById('search-tx').addEventListener('input', renderTransactions);
+        document.getElementById('tx-date-filter').addEventListener('change', renderTransactions);
+
+        document.getElementById('filter-mitra-absensi').addEventListener('change', renderAbsensi);
+        document.getElementById('absensi-date-filter').addEventListener('change', renderAbsensi);
+
+        document.getElementById('filter-mitra-exp').addEventListener('change', renderExpenses);
+        document.getElementById('exp-date-filter').addEventListener('change', renderExpenses); // Event baru pengeluaran
+
+        document.getElementById('dash-chart-filter').addEventListener('change', renderGlobalChart); // Event baru chart
+
+    </script>
+</body>
+</html>
