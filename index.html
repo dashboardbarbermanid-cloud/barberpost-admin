@@ -124,7 +124,6 @@
                 </div>
 
                 <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-8">
-                    <!-- Header with Filter -->
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
                         <h3 class="font-bold text-lg">Grafik Pendapatan</h3>
                         <div class="relative">
@@ -190,13 +189,26 @@
                     </div>
                 </div>
 
+                <!-- Daily Revenue with Filter & Summary -->
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
+                        <h3 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-calendar-day text-green-500"></i> Pendapatan Harian</h3>
+                        <div class="relative">
+                            <i class="fa-solid fa-calendar-days absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                            <input type="date" id="prof-daily-date-filter" class="bg-gray-50 border border-gray-200 text-black rounded-xl pl-9 pr-4 py-2 text-xs font-bold focus:ring-2 focus:ring-black w-40">
+                        </div>
+                    </div>
+                    <div id="prof-daily-revenue-list" class="space-y-2"></div>
+                </div>
+
                 <!-- Top Capster -->
                 <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
                     <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i class="fa-solid fa-trophy text-yellow-500"></i> Top Capster</h3>
                     <div id="prof-top-capster-list" class="space-y-2"></div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Updated Grid for Products -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
                         <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i class="fa-solid fa-users text-black"></i> Daftar Capster</h3>
                         <div id="prof-capsters-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
@@ -204,6 +216,11 @@
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
                         <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i class="fa-solid fa-list text-black"></i> Layanan & Harga</h3>
                         <div id="prof-services-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                    </div>
+                    <!-- Products Section (BARU) -->
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                        <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i class="fa-solid fa-box text-purple-600"></i> Data Produk</h3>
+                        <div id="prof-products-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
                     </div>
                 </div>
             </section>
@@ -227,7 +244,6 @@
                     </div>
                 </div>
 
-                <!-- Total Summary Card -->
                 <div class="bg-green-50 border border-green-200 p-4 rounded-xl mb-6 flex flex-col md:flex-row justify-between items-center gap-2">
                     <div>
                         <p class="text-xs font-bold text-green-600 uppercase tracking-wide">Total Pendapatan (Filter Aktif)</p>
@@ -266,7 +282,6 @@
                         <h2 class="text-3xl font-extrabold tracking-tight">Pengeluaran Mitra</h2>
                         <p class="text-gray-500 text-sm mt-1">Monitor cashflow operasional</p>
                     </div>
-                    <!-- FILTER TANGGAL BARU -->
                     <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
                         <div class="relative">
                             <i class="fa-solid fa-calendar-days absolute left-3 top-3.5 text-gray-400 text-xs"></i>
@@ -278,7 +293,6 @@
                     </div>
                 </div>
 
-                <!-- Total Summary Card -->
                 <div class="bg-red-50 border border-red-200 p-4 rounded-xl mb-6 flex flex-col md:flex-row justify-between items-center gap-2">
                     <div>
                         <p class="text-xs font-bold text-red-600 uppercase tracking-wide">Total Pengeluaran (Filter Aktif)</p>
@@ -326,6 +340,7 @@
         let globalLogs = []; 
         let listeners = []; 
         let globalChartInstance = null;
+        let currentMitraUid = null; // Store current viewing mitra UID for profile logic
 
         const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
         const showToast = (msg) => { const t = document.getElementById("toast"); t.className = "show"; t.innerText = msg; setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000); };
@@ -349,7 +364,6 @@
                 filtered = filtered.filter(t => t.timestamp >= startOfDay && t.timestamp <= endOfDay);
             }
 
-            // Hitung Total Summary
             const totalRev = filtered.filter(t => t.status === 'Lunas').reduce((sum, t) => sum + t.total, 0);
             document.getElementById('tx-summary-total').innerText = formatRp(totalRev);
 
@@ -424,13 +438,12 @@
 
         const renderExpenses = () => {
             const filterMitra = document.getElementById('filter-mitra-exp').value;
-            const dateFilter = document.getElementById('exp-date-filter').value; // BARU
+            const dateFilter = document.getElementById('exp-date-filter').value;
 
             let filtered = globalExpenses;
 
             if(filterMitra !== 'all') filtered = filtered.filter(t => t.mitraUid === filterMitra);
 
-            // Filter Tanggal Pengeluaran
             if(dateFilter) {
                 const targetDate = new Date(dateFilter);
                 const startOfDay = new Date(targetDate.setHours(0,0,0,0)).getTime();
@@ -438,7 +451,6 @@
                 filtered = filtered.filter(e => e.timestamp >= startOfDay && e.timestamp <= endOfDay);
             }
 
-            // Hitung Total Pengeluaran
             const totalExp = filtered.reduce((sum, e) => sum + e.amount, 0);
             document.getElementById('exp-summary-total').innerText = formatRp(totalExp);
 
@@ -581,6 +593,8 @@
                 globalTransactions.sort((a,b) => b.timestamp - a.timestamp);
                 if(!document.getElementById('view-dashboard').classList.contains('hidden')) renderDashboard();
                 if(!document.getElementById('view-transactions').classList.contains('hidden')) renderTransactions();
+                // Update mitra list revenue numbers real-time
+                renderMitraList();
             });
 
             const unsubExp = onSnapshot(collection(db, `users/${mitra.uid}/expenses`), (snap) => {
@@ -637,6 +651,8 @@
                 `<div class="col-span-full text-center py-10 opacity-50 bg-white rounded-2xl">Belum ada mitra terhubung.</div>` : '';
             
             mitraList.forEach(m => {
+                // Mengambil data transaksi real-time dari array global
+                // Filter status 'Lunas' untuk menghitung pendapatan bersih/real
                 const txs = globalTransactions.filter(t => t.mitraUid === m.uid && t.status === 'Lunas');
                 const totalRev = txs.reduce((sum, t) => sum + t.total, 0);
                 const txCount = txs.length;
@@ -657,7 +673,8 @@
                     </div>
                     <div class="grid grid-cols-2 gap-2 text-center bg-gray-50 p-3 rounded-xl">
                         <div>
-                            <p class="text-xs text-gray-400 font-bold uppercase">Omset</p>
+                            <!-- Perubahan Label: Omset -> Pendapatan -->
+                            <p class="text-xs text-gray-400 font-bold uppercase">Pendapatan</p>
                             <p class="font-extrabold text-sm truncate">${formatRp(totalRev)}</p>
                         </div>
                         <div>
@@ -678,7 +695,75 @@
             }
         };
 
+        // --- FUNCTION TO RENDER DAILY REVENUE INSIDE PROFILE ---
+        const renderMitraDailyRevenue = (uid) => {
+            const mitraTx = globalTransactions.filter(t => t.mitraUid === uid && t.status === 'Lunas');
+            const dateFilter = document.getElementById('prof-daily-date-filter').value;
+            
+            // Logic Filter Tanggal
+            let filteredTx = mitraTx;
+            if(dateFilter) {
+                const targetDate = new Date(dateFilter);
+                const startOfDay = new Date(targetDate.setHours(0,0,0,0)).getTime();
+                const endOfDay = new Date(targetDate.setHours(23,59,59,999)).getTime();
+                filteredTx = filteredTx.filter(t => t.timestamp >= startOfDay && t.timestamp <= endOfDay);
+            } else {
+                // Default: 7 hari terakhir
+                const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+                filteredTx = mitraTx.filter(t => t.timestamp >= sevenDaysAgo);
+            }
+
+            // Group by Date
+            const dateMap = {};
+            filteredTx.forEach(t => {
+                const dateStr = new Date(t.timestamp).toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: 'short' });
+                if(!dateMap[t.timestamp]) dateMap[t.timestamp] = { str: dateStr, total: 0, count: 0 };
+                dateMap[t.timestamp].total += t.total;
+                dateMap[t.timestamp].count++;
+            });
+
+            // Sort by Timestamp Descending
+            const sortedDaily = Object.keys(dateMap).map(ts => ({ ts: parseInt(ts), ...dateMap[ts] })).sort((a, b) => b.ts - a.ts);
+
+            // Hitung total dari view yang sedang ditampilkan (Summary Baru)
+            const totalViewRevenue = sortedDaily.reduce((sum, d) => sum + d.total, 0);
+
+            const dailyContainer = document.getElementById('prof-daily-revenue-list');
+            
+            if (sortedDaily.length === 0) {
+                dailyContainer.innerHTML = '<p class="text-sm text-gray-400 text-center py-2">Belum ada data pendapatan.</p>';
+            } else {
+                // Tambahkan kartu Total di paling atas
+                dailyContainer.innerHTML = `
+                    <div class="bg-black text-white p-4 rounded-2xl mb-4 flex justify-between items-center shadow-lg border border-gray-800">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Pendapatan</p>
+                            <p class="text-[10px] text-gray-500">Periode tampilan</p>
+                        </div>
+                        <span class="text-xl font-extrabold text-white">${formatRp(totalViewRevenue)}</span>
+                    </div>
+                `;
+            }
+
+            sortedDaily.forEach(d => {
+                dailyContainer.innerHTML += `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-black text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shadow-sm"><i class="fa-solid fa-money-bill-wave"></i></div>
+                            <div>
+                                <p class="font-bold text-sm text-black">${d.str}</p>
+                                <p class="text-[10px] text-gray-500">${d.count} Transaksi</p>
+                            </div>
+                        </div>
+                        <span class="font-bold text-green-600 text-sm w-auto truncate">${formatRp(d.total)}</span>
+                    </div>
+                `;
+            });
+        };
+        // --- END DAILY REVENUE FUNCTION ---
+
         window.openMitraProfile = async (uid) => {
+            currentMitraUid = uid; // Set current UID
             const mitra = mitraList.find(m => m.uid === uid);
             if(!mitra) return;
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
@@ -691,6 +776,10 @@
             document.getElementById('prof-email').innerText = mitra.email;
             document.getElementById('prof-uid').innerText = mitra.uid;
 
+            // Render Daily Revenue
+            renderMitraDailyRevenue(uid);
+
+            // Capsters
             const mitraTx = globalTransactions.filter(t => t.mitraUid === uid && t.status === 'Lunas');
             const capsterStats = {};
             mitraTx.forEach(t => {
@@ -748,6 +837,28 @@
                 });
             } catch(e) { console.error(e); }
 
+            // --- FETCH PRODUCTS ---
+            try {
+                const prodSnap = await getDocs(collection(db, `users/${uid}/products`));
+                const prodContainer = document.getElementById('prof-products-list');
+                prodContainer.innerHTML = prodSnap.empty ? '<p class="text-sm text-gray-400 text-center">Tidak ada produk.</p>' : '';
+                prodSnap.forEach(doc => {
+                    const d = doc.data();
+                    prodContainer.innerHTML += `
+                        <div class="flex justify-between items-center p-2 bg-gray-50 rounded-lg border border-gray-100">
+                            <div class="flex items-center gap-2">
+                                <div class="bg-purple-100 text-purple-600 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs"><i class="fa-solid fa-box"></i></div>
+                                <div>
+                                    <p class="font-bold text-sm text-gray-800">${d.name}</p>
+                                </div>
+                            </div>
+                            <span class="font-extrabold text-sm text-purple-700 w-auto truncate">${formatRp(d.price)}</span>
+                        </div>
+                    `;
+                });
+            } catch(e) { console.error(e); }
+            // --- END PRODUCTS ---
+
             try {
                 const paymentSnap = await getDocs(collection(db, `users/${uid}/store_settings`));
                 let qrisFound = false;
@@ -794,7 +905,6 @@
             
             sorted.forEach((item, idx) => {
                 container.innerHTML += `
-                    <!-- Layout diubah ke flex-col (tumpuk) agar angka tidak keluar bar -->
                     <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center gap-2">
                         <div class="text-3xl font-black text-gray-200">#${idx+1}</div>
                         <div class="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center text-xl font-bold shadow-inner">${item.name.charAt(0)}</div>
@@ -812,20 +922,16 @@
             if(globalChartInstance) globalChartInstance.destroy();
 
             const dailyData = {};
-            
-            // Filter Date Logic for Chart
             const chartDateFilter = document.getElementById('dash-chart-filter').value;
             const now = Date.now();
             
             let filterStart, filterEnd;
 
             if(chartDateFilter) {
-                // Filter hari spesifik
                 const targetDate = new Date(chartDateFilter);
                 filterStart = new Date(targetDate.setHours(0,0,0,0)).getTime();
                 filterEnd = new Date(targetDate.setHours(23,59,59,999)).getTime();
             } else {
-                // Default 30 hari terakhir
                 filterStart = now - (30 * 24 * 60 * 60 * 1000);
                 filterEnd = now;
             }
@@ -867,9 +973,14 @@
         document.getElementById('absensi-date-filter').addEventListener('change', renderAbsensi);
 
         document.getElementById('filter-mitra-exp').addEventListener('change', renderExpenses);
-        document.getElementById('exp-date-filter').addEventListener('change', renderExpenses); // Event baru pengeluaran
+        document.getElementById('exp-date-filter').addEventListener('change', renderExpenses);
 
-        document.getElementById('dash-chart-filter').addEventListener('change', renderGlobalChart); // Event baru chart
+        document.getElementById('dash-chart-filter').addEventListener('change', renderGlobalChart);
+
+        // Listener untuk filter tanggal di profil mitra
+        document.getElementById('prof-daily-date-filter').addEventListener('change', () => {
+            if(currentMitraUid) renderMitraDailyRevenue(currentMitraUid);
+        });
 
     </script>
 </body>
